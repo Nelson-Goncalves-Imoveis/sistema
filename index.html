@@ -590,7 +590,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 // ============================================================
 const SUPABASE_URL = 'https://bvlajibwhlmlvpzuaqgj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2bGFqaWJ3aGxtbHZwenVhcWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MzM3MzEsImV4cCI6MjA5NTMwOTczMX0.ldGOHKofFfCBc9Y_ZRVzOTobCSrJu5l5Vs9jY1qTwOg';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============================================================
 //  STORAGE & DB (em memória — sincronizado com Supabase)
@@ -604,10 +604,10 @@ let IDS = { prop:1, imovel:1, inq:1, pag:1, user:2 };
 let SESSION = { userId:null, perfil:null, nome:null };
 
 // ---- Helpers Supabase ----
-async function sbGet(table){ const {data,error}=await supabase.from(table).select('*'); if(error){console.error(table,error);return[];} return data||[]; }
-async function sbUpsert(table,row){ const {error}=await supabase.from(table).upsert(row,{onConflict:'id'}); if(error) console.error('upsert',table,error); return !error; }
-async function sbDelete(table,id){ const {error}=await supabase.from(table).delete().eq('id',id); if(error) console.error('delete',table,error); }
-async function sbGetSingle(table,matchCol,matchVal){ const {data}=await supabase.from(table).select('*').eq(matchCol,matchVal).single(); return data; }
+async function sbGet(table){ const {data,error}=await _sb.from(table).select('*'); if(error){console.error(table,error);return[];} return data||[]; }
+async function sbUpsert(table,row){ const {error}=await _sb.from(table).upsert(row,{onConflict:'id'}); if(error) console.error('upsert',table,error); return !error; }
+async function sbDelete(table,id){ const {error}=await _sb.from(table).delete().eq('id',id); if(error) console.error('delete',table,error); }
+async function sbGetSingle(table,matchCol,matchVal){ const {data}=await _sb.from(table).select('*').eq(matchCol,matchVal).single(); return data; }
 
 function showLoading(show){
   let el=document.getElementById('loading-overlay');
@@ -623,8 +623,8 @@ function showLoading(show){
 
 async function saveDB(){
   try{
-    await supabase.from('config').upsert({id:1,...DB.config},{onConflict:'id'});
-    await supabase.from('ids').upsert({id:1,...IDS},{onConflict:'id'});
+    await _sb.from('config').upsert({id:1,...DB.config},{onConflict:'id'});
+    await _sb.from('ids').upsert({id:1,...IDS},{onConflict:'id'});
   }catch(e){console.error('saveDB',e);}
 }
 
@@ -650,7 +650,7 @@ async function loadDB(){
 async function genId(t){
   const id=String(IDS[t]||1).padStart(3,'0');
   IDS[t]=(IDS[t]||1)+1;
-  await supabase.from('ids').upsert({id:1,...IDS},{onConflict:'id'});
+  await _sb.from('ids').upsert({id:1,...IDS},{onConflict:'id'});
   return id;
 }
 
@@ -679,7 +679,7 @@ async function doLogin(){
   const pass=document.getElementById('login-pass').value;
   document.getElementById('login-err').textContent='';
   // Recarrega usuários diretamente do banco
-  const {data:users}=await supabase.from('usuarios').select('*').eq('login',user).eq('status','ativo');
+  const {data:users}=await _sb.from('usuarios').select('*').eq('login',user).eq('status','ativo');
   const u=users?.find(u=>u.senha===pass);
   if(!u){document.getElementById('login-err').textContent='Usuário ou senha incorretos.';return;}
   SESSION={userId:u.id,perfil:u.perfil,nome:u.nome};
@@ -711,7 +711,7 @@ function aplicarLogo(){
 async function carregarLogo(input){
   const f=input.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=async e=>{ DB.config.logoB64=e.target.result; await supabase.from('config').upsert({id:1,...DB.config},{onConflict:'id'}); aplicarLogo(); toast('Logo carregada e salva!'); };
+  r.onload=async e=>{ DB.config.logoB64=e.target.result; await _sb.from('config').upsert({id:1,...DB.config},{onConflict:'id'}); aplicarLogo(); toast('Logo carregada e salva!'); };
   r.readAsDataURL(f);
 }
 
@@ -1176,7 +1176,7 @@ async function excluirUsuario(id){ if(!isAdmin()) return; if(id==='001'||DB.usua
 //  CONFIGURAÇÕES
 // ============================================================
 function carregarConfig(){ const c=DB.config; document.getElementById('cfg-empresa').value=c.empresa||''; document.getElementById('cfg-endereco').value=c.endereco||''; document.getElementById('cfg-tel').value=c.tel||''; document.getElementById('cfg-email').value=c.email||''; document.getElementById('cfg-adm').value=c.adm_pct||7; if(c.logoB64){ document.getElementById('cfg-logo-preview').innerHTML=`<img src="${c.logoB64}" style="max-height:60px;max-width:160px;border-radius:6px;" alt="logo">`; } }
-async function salvarConfig(){ if(!isAdmin()){ toast('Sem permissão','err'); return; } DB.config.empresa=document.getElementById('cfg-empresa').value; DB.config.endereco=document.getElementById('cfg-endereco').value; DB.config.tel=document.getElementById('cfg-tel').value; DB.config.email=document.getElementById('cfg-email').value; DB.config.adm_pct=parseFloat(document.getElementById('cfg-adm').value)||7; await supabase.from('config').upsert({id:1,...DB.config},{onConflict:'id'}); aplicarLogo(); toast('Configurações salvas!'); }
+async function salvarConfig(){ if(!isAdmin()){ toast('Sem permissão','err'); return; } DB.config.empresa=document.getElementById('cfg-empresa').value; DB.config.endereco=document.getElementById('cfg-endereco').value; DB.config.tel=document.getElementById('cfg-tel').value; DB.config.email=document.getElementById('cfg-email').value; DB.config.adm_pct=parseFloat(document.getElementById('cfg-adm').value)||7; await _sb.from('config').upsert({id:1,...DB.config},{onConflict:'id'}); aplicarLogo(); toast('Configurações salvas!'); }
 
 // ============================================================
 //  MODAIS — fechar clicando fora
