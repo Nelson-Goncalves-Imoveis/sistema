@@ -708,7 +708,7 @@ function aplicarLogo(){
   const prev = document.getElementById('cfg-logo-preview');
   if(prev) prev.innerHTML=`<img src="${b64}" style="max-height:60px;max-width:160px;border-radius:6px;" alt="logo">`;
 }
-function carregarLogo(input){
+async function carregarLogo(input){
   const f=input.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=async e=>{ DB.config.logoB64=e.target.result; await supabase.from('config').upsert({id:1,...DB.config},{onConflict:'id'}); aplicarLogo(); toast('Logo carregada e salva!'); };
@@ -1113,7 +1113,7 @@ function switchLoteTab(id,btn){ document.querySelectorAll('#view-lote .section-v
 function carregarExemplo(t){ document.getElementById(LOTE_TXT[t]).value=LOTE_EX[t]; prevLote(t); }
 function lerCSV(input,t){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ document.getElementById(LOTE_TXT[t]).value=e.target.result; prevLote(t); }; r.readAsText(f,'UTF-8'); }
 function prevLote(t){ const lines=document.getElementById(LOTE_TXT[t]).value.trim().split('\n').filter(l=>l.trim()); const cols=LOTE_COLS[t]; if(!lines.length){ toast('Sem dados','inf'); return; } let html=`<table class="data-table"><thead><tr><th>#</th>${cols.map(c=>`<th>${c}</th>`).join('')}<th>Status</th></tr></thead><tbody>`; lines.forEach((l,i)=>{ const c=l.split(';').map(x=>x.trim()); const ok=c.length>=cols.length; html+=`<tr><td>${i+1}</td>${c.slice(0,cols.length).map(x=>`<td>${x}</td>`).join('')}<td>${ok?'<span class="badge badge-green">OK</span>':'<span class="badge badge-red">⚠</span>'}</td></tr>`; }); html+=`</tbody></table><p style="font-size:12px;color:var(--text3);margin-top:6px">${lines.length} registro(s)</p>`; document.getElementById(LOTE_PRE[t]).innerHTML=html; }
-function importarLote(t){
+async function importarLote(t){
   if(isReadOnly()){ toast('Sem permissão','err'); return; }
   const lines=document.getElementById(LOTE_TXT[t]).value.trim().split('\n').filter(l=>l.trim()); let n=0;
   for(const line of lines){ const c=line.split(';').map(x=>x.trim()); try{
