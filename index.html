@@ -778,7 +778,7 @@ function renderProprietarios(){
   tbody.innerHTML=lista.map(p=>{ const q=DB.imoveis.filter(i=>i.propId===p.id).length; return `<tr><td><span class="badge badge-gray">${p.id}</span></td><td><strong>${p.nome}</strong></td><td>${p.doc||'—'}</td><td>${p.tel||'—'}</td><td><span class="badge badge-blue">${q}</span></td><td><button class="btn btn-outline btn-xs" onclick="editarProprietario('${p.id}')">✏️</button> <button class="btn btn-red btn-xs" onclick="excluirProprietario('${p.id}')">🗑</button></td></tr>`; }).join('');
 }
 function abrirModalProp(){ document.getElementById('prop-id').value=''; ['prop-nome','prop-doc','prop-tel','prop-email','prop-banco','prop-agencia','prop-conta','prop-pix','prop-obs'].forEach(id=>document.getElementById(id).value=''); document.getElementById('modal-prop-title').textContent='👤 Cadastrar Proprietário'; openModal('modal-prop'); }
-function salvarProprietario(){
+async function salvarProprietario(){
   if(isReadOnly()){ toast('Sem permissão','err'); return; }
   const id=document.getElementById('prop-id').value;
   const nome=document.getElementById('prop-nome').value.trim();
@@ -805,7 +805,7 @@ function renderImoveis(){
   grid.innerHTML=lista.map(im=>{ const p=getProprietario(im.propId); const inq=DB.inquilinos.find(i=>i.imovelId===im.id&&i.ativo!==false); return `<div class="imovel-card"><div class="ic-header"><span class="ic-cod">${im.id} · ${im.tipo||'Imóvel'}</span>${inq?'<span class="badge badge-green">Alugado</span>':'<span class="badge badge-amber">Disponível</span>'}</div><div class="ic-end">${im.logradouro}, ${im.numero}${im.complemento?' - '+im.complemento:''}</div><div class="ic-prop">👤 ${p?.nome||'—'}</div>${im.bairro?`<div style="font-size:11px;color:var(--text3)">${im.bairro}${im.cidade?' · '+im.cidade:''}</div>`:''}<div class="ic-sep"></div><div class="ic-row"><span class="ic-lbl">Aluguel</span><span class="ic-val" style="color:var(--green)">${fmt(im.aluguel)}</span></div><div class="ic-row"><span class="ic-lbl">Vencimento</span><span class="ic-val">Dia ${im.vencimento||'?'}</span></div>${inq?`<div class="ic-row"><span class="ic-lbl">Inquilino</span><span class="ic-val" style="font-size:12px">${inq.nome}</span></div>`:''}<div class="ic-actions"><button class="btn btn-outline btn-xs" onclick="editarImovel('${im.id}')">✏️ Editar</button>${!inq?`<button class="btn btn-brown btn-xs" onclick="novoInqImovel('${im.id}')">🔑 Locar</button>`:`<button class="btn btn-amber btn-xs" onclick="abrirPagRapido('${inq.id}')">💰</button>`}<button class="btn btn-red btn-xs" onclick="excluirImovel('${im.id}')">🗑</button></div></div>`; }).join('');
 }
 function abrirModalImovel(){ document.getElementById('imovel-id').value=''; ['im-end','im-num','im-comp','im-cep','im-bairro','im-cidade','im-obs'].forEach(id=>document.getElementById(id).value=''); document.getElementById('im-aluguel').value=''; document.getElementById('im-venc').value=''; document.getElementById('im-adm').value='10'; document.getElementById('im-iptu').value='0'; document.getElementById('im-condo').value='0'; document.getElementById('im-agua-fixa').value='0'; document.getElementById('im-desc-fixo').value='0'; document.getElementById('modal-imovel-title').textContent='🏠 Cadastrar Imóvel'; populatePropSel('im-prop'); openModal('modal-imovel'); }
-function salvarImovel(){
+async function salvarImovel(){
   if(isReadOnly()){ toast('Sem permissão','err'); return; }
   const id=document.getElementById('imovel-id').value;
   const end=document.getElementById('im-end').value.trim(), num=document.getElementById('im-num').value.trim();
@@ -834,7 +834,7 @@ function renderInquilinos(){
   tbody.innerHTML=lista.map(i=>{ const im=getImovel(i.imovelId); const pag=getPagamento(i.id,mes); const val=parseFloat(i.aluguel)||parseFloat(im?.aluguel)||0; const sb=pag?pag.status==='pago'?'<span class="badge badge-green">Pago</span>':pag.status==='parcial'?'<span class="badge badge-amber">Parcial</span>':'<span class="badge badge-red">Pendente</span>':'<span class="badge badge-gray">Sem reg.</span>'; return `<tr><td><span class="badge badge-gray">${i.id}</span></td><td><strong>${i.nome}</strong>${i.tel?`<div style="font-size:11px;color:var(--text3)">${i.tel}</div>`:''}</td><td>${i.cpf||'—'}</td><td style="font-size:12px">${im?`${im.logradouro}, ${im.numero}`:'—'}</td><td style="font-weight:600;color:var(--green)">${fmt(val)}</td><td>Dia ${im?.vencimento||'?'}</td><td>${sb}</td><td style="white-space:nowrap"><button class="btn btn-brown btn-xs" onclick="abrirPagRapido('${i.id}')">💰</button> <button class="btn btn-outline btn-xs" onclick="editarInquilino('${i.id}')">✏️</button> <button class="btn btn-red btn-xs" onclick="excluirInquilino('${i.id}')">🗑</button></td></tr>`; }).join('');
 }
 function abrirModalInq(){ document.getElementById('inq-id').value=''; ['inq-nome','inq-cpf','inq-tel','inq-email','inq-aluguel','inq-obs'].forEach(id=>document.getElementById(id).value=''); document.getElementById('inq-inicio').value=today(); document.getElementById('inq-fim').value=''; document.getElementById('modal-inq-title').textContent='🔑 Cadastrar Inquilino'; populateInqImovelSel(); openModal('modal-inq'); }
-function salvarInquilino(){
+async function salvarInquilino(){
   if(isReadOnly()){ toast('Sem permissão','err'); return; }
   const id=document.getElementById('inq-id').value;
   const nome=document.getElementById('inq-nome').value.trim(), imovelId=document.getElementById('inq-imovel').value;
@@ -854,7 +854,7 @@ async function excluirInquilino(id){ if(!confirm('Excluir inquilino?')) return; 
 function abrirModalPag(){ document.getElementById('pag-id').value=''; document.getElementById('pag-mes').value=monthStr(); document.getElementById('pag-data').value=today(); ['pag-desc','pag-agua','pag-extra','pag-juros'].forEach(id=>document.getElementById(id).value='0'); document.getElementById('pag-obs').value=''; document.getElementById('pag-status').value='pendente'; populatePagInqSel(); openModal('modal-pag'); }
 function populatePagInqSel(){ const s=document.getElementById('pag-inq'); s.innerHTML='<option value="">Selecione...</option>'+DB.inquilinos.map(i=>`<option value="${i.id}">${i.nome}</option>`).join(''); }
 function preencherDadosPag(){ const inq=getInquilino(document.getElementById('pag-inq').value); if(!inq) return; const im=getImovel(inq.imovelId); document.getElementById('pag-aluguel').value=parseFloat(inq.aluguel)||parseFloat(im?.aluguel)||0; if(im?.aguaFixa>0) document.getElementById('pag-agua').value=parseFloat(im.aguaFixa)||0; if(im?.descFixo>0) document.getElementById('pag-desc').value=parseFloat(im.descFixo)||0; }
-function salvarPagamento(){
+async function salvarPagamento(){
   if(isReadOnly()){ toast('Sem permissão','err'); return; }
   const id=document.getElementById('pag-id').value, inqId=document.getElementById('pag-inq').value, mes=document.getElementById('pag-mes').value;
   if(!inqId||!mes){ toast('Informe inquilino e mês','err'); return; }
@@ -1148,7 +1148,7 @@ function renderUsuarios(){
   document.getElementById('tbody-usuarios').innerHTML=DB.usuarios.map(u=>`<tr><td><strong>${u.login}</strong></td><td>${u.nome}</td><td><span class="badge ${u.perfil==='admin'?'badge-red':u.perfil==='operador'?'badge-blue':'badge-green'}">${u.perfil}</span></td><td><span class="badge ${u.status==='ativo'?'badge-green':'badge-gray'}">${u.status}</span></td><td style="font-size:11px;color:var(--text3)">${new Date(u.criadoEm||Date.now()).toLocaleDateString('pt-BR')}</td><td><button class="btn btn-outline btn-xs" onclick="editarUsuario('${u.id}')">✏️</button> ${u.login!=='admin'?`<button class="btn btn-red btn-xs" onclick="excluirUsuario('${u.id}')">🗑</button>`:''}</td></tr>`).join('');
 }
 function abrirModalUsuario(){ if(!isAdmin()){ toast('Sem permissão','err'); return; } document.getElementById('user-id').value=''; ['user-nome','user-login','user-senha','user-senha2'].forEach(id=>document.getElementById(id).value=''); document.getElementById('user-perfil').value='operador'; document.getElementById('user-status').value='ativo'; document.getElementById('modal-user-title').textContent='👥 Novo Usuário'; document.getElementById('user-senha-hint').style.display='none'; openModal('modal-usuario'); }
-function salvarUsuario(){
+async function salvarUsuario(){
   if(!isAdmin()){ toast('Sem permissão','err'); return; }
   const id=document.getElementById('user-id').value;
   const nome=document.getElementById('user-nome').value.trim();
